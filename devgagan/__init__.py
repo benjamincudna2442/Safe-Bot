@@ -7,18 +7,40 @@ from config import API_ID, API_HASH, BOT_TOKEN, STRING, MONGO_DB, DEFAULT_SESSIO
 from telethon.sync import TelegramClient
 from motor.motor_asyncio import AsyncIOMotorClient
 
+class CustomFilter(logging.Filter):
+    def filter(self, record):
+        return record.name == "devgagan" and record.msg in [
+            "Creating Telethon Bot Client From BOT_TOKEN",
+            "Telethon Bot Client Created Successfully",
+            "Creating Pyro Bot Client From BOT_TOKEN",
+            "Pyro Bot Client Created Successfullly",
+            "Creating Mongo Client From MONGO_DB",
+            "Mongo Client Created Successfully",
+            "RestrictedContentDL Successfully Started 💥"
+        ]
+
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
     level=logging.INFO,
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+handler.addFilter(CustomFilter())
+logging.getLogger().handlers = [handler]
+logging.getLogger("pyrogram").setLevel(logging.WARNING)
+logging.getLogger("telethon").setLevel(logging.WARNING)
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 
 botStartTime = time.time()
 
+logger.info("Creating Telethon Bot Client From BOT_TOKEN")
+sex = TelegramClient('sexrepo', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+logger.info("Telethon Bot Client Created Successfully")
+
+logger.info("Creating Pyro Bot Client From BOT_TOKEN")
 app = Client(
     "pyrobot",
     api_id=API_ID,
@@ -28,11 +50,6 @@ app = Client(
     parse_mode=ParseMode.MARKDOWN
 )
 
-logger.info("Creating Telethon Bot Client From BOT_TOKEN")
-sex = TelegramClient('sexrepo', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
-logger.info("Telethon Bot Client Created Successfully")
-
-logger.info("Creating Pyro Bot Client From BOT_TOKEN")
 if STRING:
     pro = Client("ggbot", api_id=API_ID, api_hash=API_HASH, session_string=STRING)
 else:
