@@ -7,8 +7,8 @@
 # Telegram: https://t.me/team_spy_pro
 # YouTube: https://youtube.com/@dev_gagan
 # Created: 2025-01-11
-# Last Modified: 2025-02-01
-# Version: 2.0.5
+# Last Modified: 2025-06-09
+# Version: 2.0.6
 # License: MIT License
 # Improved logic handles
 # ---------------------------------------------------
@@ -35,6 +35,7 @@ from config import MONGO_DB as MONGODB_CONNECTION_STRING, LOG_GROUP, OWNER_ID, S
 from devgagan.core.mongo import db as odb
 from telethon import TelegramClient, events, Button
 from devgagantools import fast_upload
+from moviepy import *
 
 def thumbnail(sender):
     return f'{sender}.jpg' if os.path.exists(f'{sender}.jpg') else None
@@ -74,8 +75,47 @@ async def format_caption_to_html(caption: str) -> str:
     caption = re.sub(r"\|\|(.*?)\|\|", r"<details>\1</details>", caption)
     caption = re.sub(r"\[(.*?)\]\((.*?)\)", r'<a href="\2">\1</a>', caption)
     return caption.strip() if caption else None
-    
 
+async def apply_video_watermark(file, watermark_text, sender):
+    """Apply a text watermark to a video using moviepy."""
+    try:
+        # Load the video
+        video = VideoFileClip(file)
+        
+        # Create a text clip for the watermark
+        watermark = TextClip(
+            watermark_text,
+            fontsize=24,
+            color='white',
+            stroke_color='black',
+            stroke_width=1,
+            font='Arial'
+        ).set_position(('center', 'bottom')).set_duration(video.duration)
+        
+        # Overlay the watermark on the video
+        final_video = CompositeVideoClip([video, watermark])
+        
+        # Generate output file name
+        base_name, ext = os.path.splitext(file)
+        output_file = f"{base_name}_watermarked{ext}"
+        
+        # Write the output file
+        final_video.write_videofile(output_file, codec='libx264', audio_codec='aac')
+        
+        # Close clips to free memory
+        video.close()
+        watermark.close()
+        final_video.close()
+        
+        # Replace original file with watermarked file
+        os.remove(file)
+        os.rename(output_file, file)
+        
+        return file
+    except Exception as e:
+        print(f"Error applying watermark: {e}")
+        await app.send_message(LOG_GROUP, f"**Watermark Error:** {str(e)}")
+        return file  # Return original file if watermarking fails
 
 async def upload_media(sender, target_chat_id, file, caption, edit, topic_id):
     try:
@@ -90,6 +130,11 @@ async def upload_media(sender, target_chat_id, file, caption, edit, topic_id):
         video_formats = {'mp4', 'mkv', 'avi', 'mov'}
         document_formats = {'pdf', 'docx', 'txt', 'epub'}
         image_formats = {'jpg', 'png', 'jpeg'}
+
+        # Apply watermark to videos if set
+        watermark_text = load_watermark_text(sender)
+        if watermark_text and file.split('.')[-1].lower() in video_formats:
+            file = await apply_video_watermark(file, watermark_text, sender)
 
         # Pyrogram upload
         if upload_method == "Pyrogram":
@@ -186,7 +231,6 @@ async def upload_media(sender, target_chat_id, file, caption, edit, topic_id):
                 os.remove(thumb_path)
         gc.collect()
 
-
 async def get_msg(userbot, sender, edit_id, msg_link, i, message):
     try:
         # Sanitize the message link
@@ -195,7 +239,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
         saved_channel_ids = load_saved_channel_ids()
         size_limit = 2 * 1024 * 1024 * 1024  # 1.99 GB size limit
         file = ''
-        edit = ''
+        edit =Nazmul Hossain
         # Extract chat and message ID for valid Telegram links
         if 't.me/c/' in msg_link or 't.me/b/' in msg_link:
             parts = msg_link.split("/")
@@ -214,7 +258,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                 return
             
         elif '/s/' in msg_link: # fixed story typo
-            edit = await app.edit_message_text(sender, edit_id, "Story Link Dictected...")
+            edit = await app.edit_message_text(sender, edit_id, "Story Link Detected...")
             if userbot is None:
                 await edit.edit("Login in bot save stories...")     
                 return
@@ -261,13 +305,8 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             await handle_sticker(app, msg, target_chat_id, topic_id, edit_id, LOG_GROUP)
             return
 
-        
         # Handle file media (photo, document, video)
         file_size = get_message_file_size(msg)
-
-        # if file_size and file_size > size_limit and pro is None:
-        #     await app.edit_message_text(sender, edit_id, "**❌ 4GB Uploader not found**")
-        #     return
 
         file_name = await get_media_filename(msg)
         edit = await app.edit_message_text(sender, edit_id, "**Downloading...**")
@@ -298,7 +337,6 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             os.remove(file)
             return
 
-
         if msg.video_note:
             result = await app.send_video_note(target_chat_id, file, reply_to_message_id=topic_id)
             await result.copy(LOG_GROUP)
@@ -313,8 +351,6 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             os.remove(file)
             return
 
-        # Upload media
-        # await edit.edit("**Checking file...**")
         if file_size > size_limit and (free_check == 1 or pro is None):
             await edit.delete()
             await split_and_upload_file(app, sender, target_chat_id, file, caption, topic_id)
@@ -327,7 +363,6 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
     except (ChannelBanned, ChannelInvalid, ChannelPrivate, ChatIdInvalid, ChatInvalid):
         await app.edit_message_text(sender, edit_id, "Have you joined the channel?")
     except Exception as e:
-        # await app.edit_message_text(sender, edit_id, f"Failed to save: `{msg_link}`\n\nError: {str(e)}")
         print(f"Error: {e}")
     finally:
         # Clean up
@@ -348,13 +383,11 @@ async def clone_text_message(app, msg, target_chat_id, topic_id, edit_id, log_gr
     await devgaganin.copy(log_group)
     await edit.delete()
 
-
 async def handle_sticker(app, msg, target_chat_id, topic_id, edit_id, log_group):
     edit = await app.edit_message_text(target_chat_id, edit_id, "Handling sticker...")
     result = await app.send_sticker(target_chat_id, msg.sticker.file_id, reply_to_message_id=topic_id)
     await result.copy(log_group)
     await edit.delete()
-
 
 async def get_media_filename(msg):
     if msg.document:
@@ -388,7 +421,6 @@ async def get_final_caption(msg, sender):
         final_caption = final_caption.replace(word, replace_word)
         
     return final_caption if final_caption else None
-
 
 async def download_user_stories(userbot, chat_id, msg_id, edit, sender):
     try:
@@ -492,16 +524,12 @@ async def copy_message_with_chat_id(app, userbot, sender, chat_id, message_id, e
                 await edit.edit("Unsupported media type.")
 
     except Exception as e:
-        print(f"Error : {e}")
+        print(f"Error: {e}")
         pass
-        #error_message = f"Error occurred while processing message: {str(e)}"
-        # await app.send_message(sender, error_message)
-        # await app.send_message(sender, f"Make Bot admin in your Channel - {target_chat_id} and restart the process after /cancel")
 
     finally:
         if file and os.path.exists(file):
             os.remove(file)
-
 
 async def send_media_message(app, target_chat_id, msg, caption, topic_id):
     try:
@@ -517,7 +545,6 @@ async def send_media_message(app, target_chat_id, msg, caption, topic_id):
     # Fallback to copy_message in case of any exceptions
     return await app.copy_message(target_chat_id, msg.chat.id, msg.id, reply_to_message_id=topic_id)
     
-
 def format_caption(original_caption, sender, custom_caption):
     delete_words = load_delete_words(sender)
     replacements = load_replacement_words(sender)
@@ -531,7 +558,6 @@ def format_caption(original_caption, sender, custom_caption):
     # Append custom caption if available
     return f"{original_caption}\n\n__**{custom_caption}**__" if custom_caption else original_caption
 
-    
 # ------------------------ Button Mode Editz FOR SETTINGS ----------------------------
 
 # Define a dictionary to store user chat IDs
@@ -565,13 +591,16 @@ def save_user_data(user_id, key, value):
     except Exception as e:
         print(f"Error saving {key}: {e}")
 
-
 # Delete and replacement word functions
 load_delete_words = lambda user_id: set(load_user_data(user_id, "delete_words", []))
 save_delete_words = lambda user_id, words: save_user_data(user_id, "delete_words", list(words))
 
 load_replacement_words = lambda user_id: load_user_data(user_id, "replacement_words", {})
 save_replacement_words = lambda user_id, replacements: save_user_data(user_id, "replacement_words", replacements)
+
+# Watermark functions
+load_watermark_text = lambda user_id: load_user_data(user_id, "watermark_text", "")
+save_watermark_text = lambda user_id, text: save_user_data(user_id, "watermark_text", text)
 
 # User session functions
 def load_user_session(user_id):
@@ -597,7 +626,6 @@ async def set_caption_command(user_id, custom_caption):
 get_user_caption_preference = lambda user_id: user_caption_preferences.get(str(user_id), '')
 
 # Initialize the dictionary to store user sessions
-
 sessions = {}
 m = None
 SET_PIC = "settings.jpg"
@@ -609,7 +637,6 @@ async def settings_command(event):
     await send_settings_message(event.chat_id, user_id)
 
 async def send_settings_message(chat_id, user_id):
-    
     # Define the rest of the buttons
     buttons = [
         [Button.inline("Set Chat ID", b'setchat'), Button.inline("Set Rename Tag", b'setrename')],
@@ -618,7 +645,7 @@ async def send_settings_message(chat_id, user_id):
         [Button.inline("Session Login", b'addsession'), Button.inline("Logout", b'logout')],
         [Button.inline("Set Thumbnail", b'setthumb'), Button.inline("Remove Thumbnail", b'remthumb')],
         [Button.inline("PDF Wtmrk", b'pdfwt'), Button.inline("Video Wtmrk", b'watermark')],
-        [Button.inline("Upload Method", b'uploadmethod')],  # Include the dynamic Fast DL button
+        [Button.inline("Upload Method", b'uploadmethod')],
         [Button.url("Report Errors", "https://t.me/team_spy_pro")]
     ]
 
@@ -628,7 +655,6 @@ async def send_settings_message(chat_id, user_id):
         caption=MESS,
         buttons=buttons
     )
-
 
 pending_photos = {}
 
@@ -654,10 +680,10 @@ async def callback_query_handler(event):
 
     elif event.data == b'addsession':
         await event.respond("Send Pyrogram V2 session")
-        sessions[user_id] = 'addsession' # (If you want to enable session based login just uncomment this and modify response message accordingly)
+        sessions[user_id] = 'addsession'
 
     elif event.data == b'delete':
-        await event.respond("Send words seperated by space to delete them from caption/filename ...")
+        await event.respond("Send words separated by space to delete them from caption/filename ...")
         sessions[user_id] = 'deleteword'
         
     elif event.data == b'logout':
@@ -673,22 +699,12 @@ async def callback_query_handler(event):
         await event.respond('Please send the photo you want to set as the thumbnail.')
     
     elif event.data == b'pdfwt':
-        await event.respond("This feature is not available yet in public repo...")
-        return
+        await event.respond("PDF watermarking is not yet implemented. Contact @team_spy_pro for updates or to request this feature.")
+        sessions[user_id] = 'pdfwt'
 
-    elif event.data == b'uploadmethod':
-        # Retrieve the user's current upload method (default to Pyrogram)
-        user_data = collection.find_one({'user_id': user_id})
-        current_method = user_data.get('upload_method', 'Pyrogram') if user_data else 'Pyrogram'
-        pyrogram_check = " ✅" if current_method == "Pyrogram" else ""
-        telethon_check = " ✅" if current_method == "Telethon" else ""
-
-        # Display the buttons for selecting the upload method
-        buttons = [
-            [Button.inline(f"Pyrogram v2{pyrogram_check}", b'pyrogram')],
-            [Button.inline(f"SpyLib v1 ⚡{telethon_check}", b'telethon')]
-        ]
-        await event.edit("Choose your preferred upload method:\n\n__**Note:** **SpyLib ⚡**, built on Telethon(base), by Team SPY still in beta.__", buttons=buttons)
+    elif event.data == b'watermark':
+        await event.respond("Send the watermark text to apply to videos:")
+        sessions[user_id] = 'setwatermark'
 
     elif event.data == b'pyrogram':
         save_user_upload_method(user_id, "Pyrogram")
@@ -737,11 +753,10 @@ async def callback_query_handler(event):
             await event.respond('Thumbnail removed successfully!')
         except FileNotFoundError:
             await event.respond("No thumbnail found to remove.")
-    
 
 @gf.on(events.NewMessage(func=lambda e: e.sender_id in pending_photos))
 async def save_thumbnail(event):
-    user_id = event.sender_id  # Use event.sender_id as user_id
+    user_id = event.sender_id
 
     if event.photo:
         temp_path = await event.download_media()
@@ -749,19 +764,16 @@ async def save_thumbnail(event):
             os.remove(f'{user_id}.jpg')
         os.rename(temp_path, f'./{user_id}.jpg')
         await event.respond('Thumbnail saved successfully!')
-
     else:
         await event.respond('Please send a photo... Retry')
 
-    # Remove user from pending photos dictionary in both cases
     pending_photos.pop(user_id, None)
 
 def save_user_upload_method(user_id, method):
-    # Save or update the user's preferred upload method
     collection.update_one(
-        {'user_id': user_id},  # Query
-        {'$set': {'upload_method': method}},  # Update
-        upsert=True  # Create a new document if one doesn't exist
+        {'user_id': user_id},
+        {'$set': {'upload_method': method}},
+        upsert=True
     )
 
 @gf.on(events.NewMessage)
@@ -814,7 +826,11 @@ async def handle_user_input(event):
             delete_words.update(words_to_delete)
             save_delete_words(user_id, delete_words)
             await event.respond(f"Words added to delete list: {', '.join(words_to_delete)}")
-               
+                
+        elif session_type == 'setwatermark':
+            watermark_text = event.text.strip()
+            save_watermark_text(user_id, watermark_text)
+            await event.respond(f"Video watermark text set to: {watermark_text}")
             
         del sessions[user_id]
     
@@ -824,20 +840,16 @@ async def lock_command_handler(event):
     if event.sender_id not in OWNER_ID:
         return await event.respond("You are not authorized to use this command.")
     
-    # Extract the channel ID from the command
     try:
         channel_id = int(event.text.split(' ')[1])
     except (ValueError, IndexError):
         return await event.respond("Invalid /lock command. Use /lock CHANNEL_ID.")
     
-    # Save the channel ID to the MongoDB database
     try:
-        # Insert the channel ID into the collection
         collection.insert_one({"channel_id": channel_id})
         await event.respond(f"Channel ID {channel_id} locked successfully.")
     except Exception as e:
         await event.respond(f"Error occurred while locking channel ID: {str(e)}")
-
 
 async def handle_large_file(file, sender, edit, caption):
     if pro is None:
@@ -847,7 +859,6 @@ async def handle_large_file(file, sender, edit, caption):
         return
     
     dm = None
-    
     print("4GB connector found.")
     await edit.edit('**__ ✅ 4GB trigger connected...__**\n\n')
     
@@ -863,6 +874,10 @@ async def handle_large_file(file, sender, edit, caption):
         thumb_path = None
     try:
         if file_extension in VIDEO_EXTENSIONS:
+            # Apply watermark if set
+            watermark_text = load_watermark_text(sender)
+            if watermark_text:
+                file = await apply_video_watermark(file, watermark_text, sender)
             dm = await pro.send_video(
                 LOG_GROUP,
                 video=file,
@@ -879,7 +894,6 @@ async def handle_large_file(file, sender, edit, caption):
                 )
             )
         else:
-            # Send as document
             dm = await pro.send_document(
                 LOG_GROUP,
                 document=file,
@@ -910,7 +924,6 @@ async def handle_large_file(file, sender, edit, caption):
                 reply_markup=reply_markup
             )
         else:
-            # Simple copy without protect_content or reply_markup
             await app.copy_message(
                 target_chat_id,
                 from_chat,
@@ -960,10 +973,8 @@ async def rename_file(file, sender):
     await asyncio.to_thread(os.rename, file, new_file_name)
     return new_file_name
 
-
 async def sanitize(file_name: str) -> str:
     sanitized_name = re.sub(r'[\\/:"*?<>|]', '_', file_name)
-    # Strip leading/trailing whitespaces
     return sanitized_name.strip()
     
 async def is_file_size_exceeding(file_path, size_limit):
@@ -976,52 +987,40 @@ async def is_file_size_exceeding(file_path, size_limit):
         print(f"Error while checking file size: {e}")
         return False
 
-
 user_progress = {}
 
 def progress_callback(done, total, user_id):
-    # Check if this user already has progress tracking
     if user_id not in user_progress:
         user_progress[user_id] = {
             'previous_done': 0,
             'previous_time': time.time()
         }
     
-    # Retrieve the user's tracking data
     user_data = user_progress[user_id]
-    
-    # Calculate the percentage of progress
     percent = (done / total) * 100
-    
-    # Format the progress bar
     completed_blocks = int(percent // 10)
     remaining_blocks = 10 - completed_blocks
     progress_bar = "♦" * completed_blocks + "◇" * remaining_blocks
     
-    # Convert done and total to MB for easier reading
-    done_mb = done / (1024 * 1024)  # Convert bytes to MB
+    done_mb = done / (1024 * 1024)
     total_mb = total / (1024 * 1024)
     
-    # Calculate the upload speed (in bytes per second)
     speed = done - user_data['previous_done']
     elapsed_time = time.time() - user_data['previous_time']
     
     if elapsed_time > 0:
-        speed_bps = speed / elapsed_time  # Speed in bytes per second
-        speed_mbps = (speed_bps * 8) / (1024 * 1024)  # Speed in Mbps
+        speed_bps = speed / elapsed_time
+        speed_mbps = (speed_bps * 8) / (1024 * 1024)
     else:
         speed_mbps = 0
     
-    # Estimated time remaining (in seconds)
     if speed_bps > 0:
         remaining_time = (total - done) / speed_bps
     else:
         remaining_time = 0
     
-    # Convert remaining time to minutes
     remaining_time_min = remaining_time / 60
     
-    # Format the final output as needed
     final = (
         f"╭──────────────────╮\n"
         f"│     **__SpyLib ⚡ Uploader__**       \n"
@@ -1035,56 +1034,43 @@ def progress_callback(done, total, user_id):
         f"**__Powered by Team SPY__**"
     )
     
-    # Update tracking variables for the user
     user_data['previous_done'] = done
     user_data['previous_time'] = time.time()
     
     return final
 
-
 def dl_progress_callback(done, total, user_id):
-    # Check if this user already has progress tracking
     if user_id not in user_progress:
         user_progress[user_id] = {
             'previous_done': 0,
             'previous_time': time.time()
         }
     
-    # Retrieve the user's tracking data
     user_data = user_progress[user_id]
-    
-    # Calculate the percentage of progress
     percent = (done / total) * 100
-    
-    # Format the progress bar
     completed_blocks = int(percent // 10)
     remaining_blocks = 10 - completed_blocks
     progress_bar = "♦" * completed_blocks + "◇" * remaining_blocks
     
-    # Convert done and total to MB for easier reading
-    done_mb = done / (1024 * 1024)  # Convert bytes to MB
+    done_mb = done / (1024 * 1024)
     total_mb = total / (1024 * 1024)
     
-    # Calculate the upload speed (in bytes per second)
     speed = done - user_data['previous_done']
     elapsed_time = time.time() - user_data['previous_time']
     
     if elapsed_time > 0:
-        speed_bps = speed / elapsed_time  # Speed in bytes per second
-        speed_mbps = (speed_bps * 8) / (1024 * 1024)  # Speed in Mbps
+        speed_bps = speed / elapsed_time
+        speed_mbps = (speed_bps * 8) / (1024 * 1024)
     else:
         speed_mbps = 0
     
-    # Estimated time remaining (in seconds)
     if speed_bps > 0:
         remaining_time = (total - done) / speed_bps
     else:
         remaining_time = 0
     
-    # Convert remaining time to minutes
     remaining_time_min = remaining_time / 60
     
-    # Format the final output as needed
     final = (
         f"╭──────────────────╮\n"
         f"│     **__SpyLib ⚡ Downloader__**       \n"
@@ -1098,13 +1084,10 @@ def dl_progress_callback(done, total, user_id):
         f"**__Powered by Team SPY__**"
     )
     
-    # Update tracking variables for the user
     user_data['previous_done'] = done
     user_data['previous_time'] = time.time()
     
     return final
-
-# split function .... ?( to handle gareeb bot coder jo string n lga paaye)
 
 async def split_and_upload_file(app, sender, target_chat_id, file_path, caption, topic_id):
     if not os.path.exists(file_path):
@@ -1113,7 +1096,7 @@ async def split_and_upload_file(app, sender, target_chat_id, file_path, caption,
 
     file_size = os.path.getsize(file_path)
     start = await app.send_message(sender, f"ℹ️ File size: {file_size / (1024 * 1024):.2f} MB")
-    PART_SIZE =  1.9 * 1024 * 1024 * 1024
+    PART_SIZE = 1.9 * 1024 * 1024 * 1024
 
     part_number = 0
     async with aiofiles.open(file_path, mode="rb") as f:
@@ -1122,15 +1105,12 @@ async def split_and_upload_file(app, sender, target_chat_id, file_path, caption,
             if not chunk:
                 break
 
-            # Create part filename
             base_name, file_ext = os.path.splitext(file_path)
             part_file = f"{base_name}.part{str(part_number).zfill(3)}{file_ext}"
 
-            # Write part to file
             async with aiofiles.open(part_file, mode="wb") as part_f:
                 await part_f.write(chunk)
 
-            # Uploading part
             edit = await app.send_message(target_chat_id, f"⬆️ Uploading part {part_number + 1}...")
             part_caption = f"{caption} \n\n**Part : {part_number + 1}**"
             await app.send_document(target_chat_id, document=part_file, caption=part_caption, reply_to_message_id=topic_id,
@@ -1138,7 +1118,7 @@ async def split_and_upload_file(app, sender, target_chat_id, file_path, caption,
                 progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", edit, time.time())
             )
             await edit.delete()
-            os.remove(part_file)  # Cleanup after upload
+            os.remove(part_file)
 
             part_number += 1
 
