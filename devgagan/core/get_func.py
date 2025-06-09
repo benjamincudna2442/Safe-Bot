@@ -1,4 +1,3 @@
-```python
 # ---------------------------------------------------
 # File Name: get_func.py
 # Description: A Pyrogram bot for downloading files from Telegram channels or groups 
@@ -1181,4 +1180,3 @@ async def split_and_upload_file(app, sender, target_chat_id, file_path, caption,
         os.remove(file_path)
     if original_file and os.path.exists(original_file):
         os.remove(original_file)
-```
