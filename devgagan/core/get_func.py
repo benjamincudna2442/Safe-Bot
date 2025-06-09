@@ -1,18 +1,3 @@
-# ---------------------------------------------------
-# File Name: get_func.py
-# Description: A Pyrogram bot for downloading files from Telegram channels or groups 
-#              and uploading them back to Telegram with video and PDF watermarking.
-# Author: Gagan
-# GitHub: https://github.com/devgaganin/
-# Telegram: https://t.me/team_spy_pro
-# YouTube: https://youtube.com/@dev_gagan
-# Created: 2025-01-11
-# Last Modified: 2025-06-09
-# Version: 2.0.7
-# License: MIT License
-# Improved logic handles video and PDF watermarking
-# ---------------------------------------------------
-
 import asyncio
 import time
 import gc
@@ -46,7 +31,6 @@ import io
 def thumbnail(sender):
     return f'{sender}.jpg' if os.path.exists(f'{sender}.jpg') else None
 
-# MongoDB database name and collection name
 DB_NAME = "smart_users"
 COLLECTION_NAME = "super_user"
 
@@ -66,7 +50,6 @@ else:
     print("STRING is not available. 'app' is set to None.")
 
 async def fetch_upload_method(user_id):
-    """Fetch the user's preferred upload method."""
     user_data = collection.find_one({"user_id": user_id})
     return user_data.get("upload_method", "Pyrogram") if user_data else "Pyrogram"
 
@@ -84,7 +67,6 @@ async def format_caption_to_html(caption: str) -> str:
     return caption.strip() if caption else None
 
 async def apply_video_watermark(file, watermark_text, sender):
-    """Apply a text watermark to a video using moviepy."""
     try:
         video = VideoFileClip(file)
         duration = video.duration
@@ -92,7 +74,7 @@ async def apply_video_watermark(file, watermark_text, sender):
             watermark_text,
             fontsize=30,
             color='white',
-            font='Arial',  # Use a single, valid font name
+            font='Arial',
             stroke_color='black',
             stroke_width=1
         )
@@ -105,63 +87,50 @@ async def apply_video_watermark(file, watermark_text, sender):
         return output_file
     except Exception as e:
         print(f"Error applying video watermark: {e}")
-        return file  # Return original file if watermarking fails
+        return file
 
 async def apply_pdf_watermark(file, watermark_text, sender):
-    """Apply a text watermark to a PDF using PyPDF2 and reportlab."""
     try:
-        # Create a watermark PDF using reportlab
         output_file = f"{sender}_watermarked_{os.path.basename(file)}"
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=letter)
         can.setFont("Helvetica", 30)
-        can.setFillColorRGB(0.5, 0.5, 0.5, alpha=0.3)  # Semi-transparent gray
+        can.setFillColorRGB(0.5, 0.5, 0.5, alpha=0.3)
         can.drawString(1 * inch, 1 * inch, watermark_text)
         can.save()
         packet.seek(0)
-
-        # Merge watermark with original PDF
         watermark_pdf = PdfReader(packet)
         input_pdf = PdfReader(file)
         output_pdf = PdfWriter()
-
         for page in input_pdf.pages:
             page.merge_page(watermark_pdf.pages[0])
             output_pdf.add_page(page)
-
         with open(output_file, 'wb') as out_file:
             output_pdf.write(out_file)
-
         return output_file
     except Exception as e:
         print(f"Error applying PDF watermark: {e}")
-        return file  # Return original file if watermarking fails
+        return file
 
 async def upload_media(sender, target_chat_id, file, caption, edit, topic_id):
     try:
-        upload_method = await fetch_upload_method(sender)  # Fetch the upload method (Pyrogram or Telethon)
+        upload_method = await fetch_upload_method(sender)
         metadata = video_metadata(file) if file.split('.')[-1].lower() in VIDEO_EXTENSIONS else {'width': 0, 'height': 0, 'duration': 0}
         width, height, duration = metadata['width'], metadata['height'], metadata['duration']
         try:
             thumb_path = await screenshot(file, duration, sender) if file.split('.')[-1].lower() in VIDEO_EXTENSIONS else None
         except Exception:
             thumb_path = None
-
         video_formats = {'mp4', 'mkv', 'avi', 'mov'}
         document_formats = {'pdf', 'docx', 'txt', 'epub'}
         image_formats = {'jpg', 'png', 'jpeg'}
-
-        # Apply watermarks if applicable
         watermark_text = load_watermark_text(sender)
         pdf_watermark_text = load_pdf_watermark_text(sender)
         original_file = file
-
         if watermark_text and file.split('.')[-1].lower() in video_formats:
             file = await apply_video_watermark(file, watermark_text, sender)
         if pdf_watermark_text and file.split('.')[-1].lower() in PDF_EXTENSIONS:
             file = await apply_pdf_watermark(file, pdf_watermark_text, sender)
-
-        # Pyrogram upload
         if upload_method == "Pyrogram":
             if file.split('.')[-1].lower() in video_formats:
                 dm = await app.send_video(
@@ -178,7 +147,6 @@ async def upload_media(sender, target_chat_id, file, caption, edit, topic_id):
                     progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", edit, time.time())
                 )
                 await dm.copy(LOG_GROUP)
-                
             elif file.split('.')[-1].lower() in image_formats:
                 dm = await app.send_photo(
                     chat_id=target_chat_id,
@@ -186,7 +154,6 @@ async def upload_media(sender, target_chat_id, file, caption, edit, topic_id):
                     caption=caption,
                     parse_mode=ParseMode.MARKDOWN,
                     progress=progress_bar,
-                    reply_to_message_id=topic_id,
                     progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", edit, time.time())
                 )
                 await dm.copy(LOG_GROUP)
@@ -203,8 +170,6 @@ async def upload_media(sender, target_chat_id, file, caption, edit, topic_id):
                 )
                 await asyncio.sleep(2)
                 await dm.copy(LOG_GROUP)
-
-        # Telethon upload
         elif upload_method == "Telethon":
             await edit.delete()
             progress_message = await gf.send_message(sender, "**__Uploading...__**")
@@ -217,7 +182,6 @@ async def upload_media(sender, target_chat_id, file, caption, edit, topic_id):
                 user_id=sender
             )
             await progress_message.delete()
-
             attributes = [
                 DocumentAttributeVideo(
                     duration=duration,
@@ -226,7 +190,6 @@ async def upload_media(sender, target_chat_id, file, caption, edit, topic_id):
                     supports_streaming=True
                 )
             ] if file.split('.')[-1].lower() in video_formats else []
-
             await gf.send_file(
                 target_chat_id,
                 uploaded,
@@ -244,15 +207,11 @@ async def upload_media(sender, target_chat_id, file, caption, edit, topic_id):
                 parse_mode='html',
                 thumb=thumb_path
             )
-
-        # Clean up watermarked file if it was created
         if file != original_file and os.path.exists(file):
             os.remove(file)
-
     except Exception as e:
         await app.send_message(LOG_GROUP, f"**Upload Failed:** {str(e)}")
         print(f"Error during media upload: {e}")
-
     finally:
         if thumb_path and os.path.exists(thumb_path):
             if os.path.basename(thumb_path) != f"{sender}.jpg":
@@ -263,14 +222,12 @@ async def upload_media(sender, target_chat_id, file, caption, edit, topic_id):
 
 async def get_msg(userbot, sender, edit_id, msg_link, i, message):
     try:
-        # Sanitize the message link
         msg_link = msg_link.split("?single")[0]
         chat, msg_id = None, None
         saved_channel_ids = load_saved_channel_ids()
-        size_limit = 2 * 1024 * 1024 * 1024  # 1.99 GB size limit
+        size_limit = 2 * 1024 * 1024 * 1024
         file = ''
         edit = await app.edit_message_text(sender, edit_id, "**Processing...**")
-        # Extract chat and message ID for valid Telegram links
         if 't.me/c/' in msg_link or 't.me/b/' in msg_link:
             parts = msg_link.split("/")
             if 't.me/b/' in msg_link:
@@ -279,30 +236,25 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             else:
                 chat = int('-100' + parts[parts.index('c') + 1])
                 msg_id = int(parts[-1]) + i
-
             if chat in saved_channel_ids:
                 await app.edit_message_text(
                     message.chat.id, edit_id,
                     "Sorry! This channel is protected by **__Team SPY__**."
                 )
                 return
-            
         elif '/s/' in msg_link:
             edit = await app.edit_message_text(sender, edit_id, "Story Link Detected...")
             if userbot is None:
-                await edit.edit("Login in bot save stories...")     
+                await edit.edit("Login in bot save stories...")
                 return
             parts = msg_link.split("/")
             chat = parts[3]
-            
             if chat.isdigit():
                 chat = f"-100{chat}"
-            
             msg_id = int(parts[-1])
             await download_user_stories(userbot, chat, msg_id, edit, sender)
             await edit.delete(2)
             return
-        
         else:
             edit = await app.edit_message_text(sender, edit_id, "Public link detected...")
             chat = msg_link.split("t.me/")[1].split("/")[0]
@@ -310,48 +262,33 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             await copy_message_with_chat_id(app, userbot, sender, chat, msg_id, edit)
             await edit.delete(2)
             return
-            
-        # Fetch the target message
         msg = await userbot.get_messages(chat, msg_id)
         if msg.service or msg.empty:
             await app.delete_messages(sender, edit_id)
             return
-
         target_chat_id = user_chat_ids.get(message.chat.id, message.chat.id)
         topic_id = None
         if '/' in str(target_chat_id):
             target_chat_id, topic_id = map(int, target_chat_id.split('/', 1))
-
-        # Handle different message types
         if msg.media == MessageMediaType.WEB_PAGE_PREVIEW:
             await clone_message(app, msg, target_chat_id, topic_id, edit_id, LOG_GROUP)
             return
-
         if msg.text:
             await clone_text_message(app, msg, target_chat_id, topic_id, edit_id, LOG_GROUP)
             return
-
         if msg.sticker:
             await handle_sticker(app, msg, target_chat_id, topic_id, edit_id, LOG_GROUP)
             return
-
-        # Handle file media (photo, document, video)
         file_size = get_message_file_size(msg)
-
         file_name = await get_media_filename(msg)
         edit = await app.edit_message_text(sender, edit_id, "**Downloading...**")
-
-        # Download media
         file = await userbot.download_media(
             msg,
             file_name=file_name,
             progress=progress_bar,
             progress_args=("╭─────────────────────╮\n│      **__Downloading__...**\n├─────────────────────", edit, time.time())
         )
-        
         caption = await get_final_caption(msg, sender)
-
-        # Rename file
         file = await rename_file(file, sender)
         if msg.audio:
             result = await app.send_audio(target_chat_id, file, caption=caption, reply_to_message_id=topic_id)
@@ -359,28 +296,24 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             await edit.delete(2)
             os.remove(file)
             return
-        
         if msg.voice:
             result = await app.send_voice(target_chat_id, file, reply_to_message_id=topic_id)
             await result.copy(LOG_GROUP)
             await edit.delete(2)
             os.remove(file)
             return
-
         if msg.video_note:
             result = await app.send_video_note(target_chat_id, file, reply_to_message_id=topic_id)
             await result.copy(LOG_GROUP)
             await edit.delete(2)
             os.remove(file)
             return
-
         if msg.photo:
             result = await app.send_photo(target_chat_id, file, caption=caption, reply_to_message_id=topic_id)
             await result.copy(LOG_GROUP)
             await edit.delete(2)
             os.remove(file)
             return
-
         if file_size > size_limit and (free_check == 1 or pro is None):
             await edit.delete()
             await split_and_upload_file(app, sender, target_chat_id, file, caption, topic_id)
@@ -389,13 +322,11 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             await handle_large_file(file, sender, edit, caption)
         else:
             await upload_media(sender, target_chat_id, file, caption, edit, topic_id)
-
     except (ChannelBanned, ChannelInvalid, ChannelPrivate, ChatIdInvalid, ChatInvalid):
         await app.edit_message_text(sender, edit_id, "Have you joined the channel?")
     except Exception as e:
         print(f"Error: {e}")
     finally:
-        # Clean up
         if file and os.path.exists(file):
             os.remove(file)
         if edit:
@@ -438,34 +369,29 @@ def get_message_file_size(msg):
     return 1
 
 async def get_final_caption(msg, sender):
-    # Handle caption based on the upload method
     if msg.caption:
         original_caption = msg.caption.markdown
     else:
         original_caption = ""
-    
     custom_caption = get_user_caption_preference(sender)
     final_caption = f"{original_caption}\n\n{custom_caption}" if custom_caption else original_caption
     replacements = load_replacement_words(sender)
     for word, replace_word in replacements.items():
         final_caption = final_caption.replace(word, replace_word)
-        
     return final_caption if final_caption else None
 
 async def download_user_stories(userbot, chat_id, msg_id, edit, sender):
     try:
-        # Fetch the story using the provided chat ID and message ID
         story = await userbot.get_stories(chat_id, msg_id)
         if not story:
             await edit.edit("No story available for this user.")
-            return  
+            return
         if not story.media:
             await edit.edit("The story doesn't contain any media.")
             return
         await edit.edit("Downloading Story...")
         file_path = await userbot.download_media(story)
         print(f"Story downloaded: {file_path}")
-        # Send the downloaded story based on its type
         if story.media:
             await edit.edit("Uploading Story...")
             if story.media == MessageMediaType.VIDEO:
@@ -475,7 +401,7 @@ async def download_user_stories(userbot, chat_id, msg_id, edit, sender):
             elif story.media == MessageMediaType.PHOTO:
                 await app.send_photo(sender, file_path)
         if file_path and os.path.exists(file_path):
-            os.remove(file_path)  
+            os.remove(file_path)
         await edit.edit("Story processed successfully.")
     except RPCError as e:
         print(f"Failed to fetch story: {e}")
@@ -485,27 +411,20 @@ async def copy_message_with_chat_id(app, userbot, sender, chat_id, message_id, e
     target_chat_id = user_chat_ids.get(sender, sender)
     file = None
     result = None
-    size_limit = 2 * 1024 * 1024 * 1024  # 2 GB size limit
-
+    size_limit = 2 * 1024 * 1024 * 1024
     try:
         msg = await app.get_messages(chat_id, message_id)
         custom_caption = get_user_caption_preference(sender)
         final_caption = format_caption(msg.caption or '', sender, custom_caption)
-
-        # Parse target_chat_id and topic_id
         topic_id = None
         if '/' in str(target_chat_id):
             target_chat_id, topic_id = map(int, target_chat_id.split('/', 1))
-
-        # Handle different media types
         if msg.media:
             result = await send_media_message(app, target_chat_id, msg, final_caption, topic_id)
             return
         elif msg.text:
             result = await app.copy_message(target_chat_id, chat_id, message_id, reply_to_message_id=topic_id)
             return
-
-        # Fallback if result is None
         if result is None:
             await edit.edit("Trying if it is a group...")
             try:
@@ -515,14 +434,11 @@ async def copy_message_with_chat_id(app, userbot, sender, chat_id, message_id, e
                 pass
             chat_id = (await userbot.get_chat(f"@{chat_id}")).id
             msg = await userbot.get_messages(chat_id, message_id)
-
             if not msg or msg.service or msg.empty:
                 return
-
             if msg.text:
                 await app.send_message(target_chat_id, msg.text.markdown, reply_to_message_id=topic_id)
                 return
-
             final_caption = format_caption(msg.caption.markdown if msg.caption else "", sender, custom_caption)
             file = await userbot.download_media(
                 msg,
@@ -530,7 +446,6 @@ async def copy_message_with_chat_id(app, userbot, sender, chat_id, message_id, e
                 progress_args=("╭─────────────────────╮\n│      **__Downloading__...**\n├─────────────────────", edit, time.time())
             )
             file = await rename_file(file, sender)
-
             if msg.photo:
                 result = await app.send_photo(target_chat_id, file, caption=final_caption, reply_to_message_id=topic_id)
             elif msg.video or msg.document:
@@ -539,7 +454,7 @@ async def copy_message_with_chat_id(app, userbot, sender, chat_id, message_id, e
                 if file_size > size_limit and (freecheck == 1 or pro is None):
                     await edit.delete()
                     await split_and_upload_file(app, sender, target_chat_id, file, caption, topic_id)
-                    return       
+                    return
                 elif file_size > size_limit:
                     await handle_large_file(file, sender, edit, final_caption)
                     return
@@ -552,11 +467,9 @@ async def copy_message_with_chat_id(app, userbot, sender, chat_id, message_id, e
                 result = await app.send_sticker(target_chat_id, msg.sticker.file_id, reply_to_message_id=topic_id)
             else:
                 await edit.edit("Unsupported media type.")
-
     except Exception as e:
         print(f"Error: {e}")
         pass
-
     finally:
         if file and os.path.exists(file):
             os.remove(file)
@@ -571,26 +484,17 @@ async def send_media_message(app, target_chat_id, msg, caption, topic_id):
             return await app.send_photo(target_chat_id, msg.photo.file_id, caption=caption, reply_to_message_id=topic_id)
     except Exception as e:
         print(f"Error while sending media: {e}")
-    
-    # Fallback to copy_message in case of any exceptions
     return await app.copy_message(target_chat_id, msg.chat.id, msg.id, reply_to_message_id=topic_id)
 
 def format_caption(original_caption, sender, custom_caption):
     delete_words = load_delete_words(sender)
     replacements = load_replacement_words(sender)
-
-    # Remove and replace words in the caption
     for word in delete_words:
         original_caption = original_caption.replace(word, '  ')
     for word, replace_word in replacements.items():
         original_caption = original_caption.replace(word, replace_word)
-
-    # Append custom caption if available
     return f"{original_caption}\n\n__**{custom_caption}**__" if custom_caption else original_caption
 
-# ------------------------ Button Mode Editz FOR SETTINGS ----------------------------
-
-# Define a dictionary to store user chat IDs
 user_chat_ids = {}
 
 def load_user_data(user_id, key, default_value=None):
@@ -620,103 +524,74 @@ def save_user_data(user_id, key, value):
     except Exception as e:
         print(f"Error saving {key}: {e}")
 
-# Delete and replacement word functions
 load_delete_words = lambda user_id: set(load_user_data(user_id, "delete_words", []))
 save_delete_words = lambda user_id, words: save_user_data(user_id, "delete_words", list(words))
-
 load_replacement_words = lambda user_id: load_user_data(user_id, "replacement_words", {})
 save_replacement_words = lambda user_id, replacements: save_user_data(user_id, "replacement_words", replacements)
-
-# Watermark text functions
 load_watermark_text = lambda user_id: load_user_data(user_id, "watermark_text", "")
 save_watermark_text = lambda user_id, text: save_user_data(user_id, "watermark_text", text)
-
 load_pdf_watermark_text = lambda user_id: load_user_data(user_id, "pdf_watermark_text", "")
 save_pdf_watermark_text = lambda user_id, text: save_user_data(user_id, "pdf_watermark_text", text)
-
-# User session functions
 def load_user_session(user_id):
     return load_user_data(user_id, "session")
-
-# Upload preference functions
 set_dupload = lambda user_id, value: save_user_data(user_id, "dupload", value)
 get_dupload = lambda user_id: load_user_data(user_id, "dupload", False)
-
-# User preferences storage
 user_rename_preferences = {}
 user_caption_preferences = {}
-
-# Rename and caption preference functions
 async def set_rename_command(user_id, custom_rename_tag):
     user_rename_preferences[str(user_id)] = custom_rename_tag
-
 get_user_rename_preference = lambda user_id: user_rename_preferences.get(str(user_id), 'Team SPY')
-
 async def set_caption_command(user_id, custom_caption):
     user_caption_preferences[str(user_id)] = custom_caption
-
 get_user_caption_preference = lambda user_id: user_caption_preferences.get(str(user_id), '')
-
-# Initialize the dictionary to store user sessions
 sessions = {}
 m = None
 SET_PIC = "settings.jpg"
 MESS = "Customize by your end and Configure your settings ..."
-
 @gf.on(events.NewMessage(incoming=True, pattern='/settings'))
 async def settings_command(event):
     user_id = event.sender_id
     await send_settings_message(event.chat_id, user_id)
-
 async def send_settings_message(chat_id, user_id):
     buttons = [
-        [Button.inline("Set Chat ID", b'setchat'), Button.inline("Set Rename Tag", b'setrename')],
-        [Button.inline("Caption", b'setcaption'), Button.inline("Replace Words", b'setreplacement')],
-        [Button.inline("Remove Words", b'delete'), Button.inline("Reset", b'reset')],
-        [Button.inline("Session Login", b'addsession'), Button.inline("Logout", b'logout')],
-        [Button.inline("Set Thumbnail", b'setthumb'), Button.inline("Remove Thumbnail", b'remthumb')],
-        [Button.inline("PDF Wtmrk", b'pdfwt'), Button.inline("Video Wtmrk", b'watermark')],
-        [Button.inline("Upload Method", b'uploadmethod')],
-        [Button.url("Report Errors", "https://t.me/team_spy_pro")]
+        [Button.inline("📍 Set Chat ID", b'setchat'), Button.inline("✏️ Set Rename Tag", b'setrename')],
+        [Button.inline("📝 Caption", b'setcaption'), Button.inline("🔄 Replace Words", b'setreplacement')],
+        [Button.inline("🗑️ Remove Words", b'delete'), Button.inline("🔄 Reset", b'reset')],
+        [Button.inline("🔑 Session Login", b'addsession'), Button.inline("🚪 Logout", b'logout')],
+        [Button.inline("🖼️ Set Thumbnail", b'setthumb'), Button.inline("❌ Remove Thumbnail", b'remthumb')],
+        [Button.inline("📄 PDF Watermark", b'pdfwt'), Button.inline("🎥 Video Watermark", b'watermark')],
+        [Button.inline("⬆️ Upload Method", b'uploadmethod')],
+        [Button.url("🐞 Report Errors", "https://t.me/team_spy_pro")]
     ]
-
     await gf.send_file(
         chat_id,
         file=SET_PIC,
         caption=MESS,
         buttons=buttons
     )
-
 pending_photos = {}
-
 @gf.on(events.CallbackQuery)
 async def callback_query_handler(event):
     user_id = event.sender_id
-    
+    print(f"Callback received: {event.data}")  # Debug print to confirm callback
     if event.data == b'setchat':
         await event.respond("Send me the ID of that chat:")
         sessions[user_id] = 'setchat'
-
     elif event.data == b'setrename':
         await event.respond("Send me the rename tag:")
         sessions[user_id] = 'setrename'
-    
     elif event.data == b'setcaption':
         await event.respond("Send me the caption:")
         sessions[user_id] = 'setcaption'
-
     elif event.data == b'setreplacement':
         await event.respond("Send me the replacement words in the format: 'WORD(s)' 'REPLACEWORD'")
         sessions[user_id] = 'setreplacement'
-
     elif event.data == b'addsession':
         await event.respond("Send Pyrogram V2 session")
         sessions[user_id] = 'addsession'
-
     elif event.data == b'delete':
         await event.respond("Send words separated by space to delete them from caption/filename ...")
         sessions[user_id] = 'deleteword'
-        
     elif event.data == b'logout':
         await odb.remove_session(user_id)
         user_data = await odb.get_data(user_id)
@@ -724,31 +599,34 @@ async def callback_query_handler(event):
             await event.respond("Logged out and deleted session successfully.")
         else:
             await event.respond("You are not logged in.")
-        
     elif event.data == b'setthumb':
         pending_photos[user_id] = True
         await event.respond('Please send the photo you want to set as the thumbnail.')
-    
     elif event.data == b'pdfwt':
         await event.respond("Send the watermark text to apply to PDFs:")
         sessions[user_id] = 'setpdfwatermark'
-
     elif event.data == b'watermark':
         await event.respond("Send the watermark text to apply to videos:")
         sessions[user_id] = 'setwatermark'
-
     elif event.data == b'pyrogram':
         save_user_upload_method(user_id, "Pyrogram")
         await event.edit("Upload method set to **Pyrogram** ✅")
-
     elif event.data == b'telethon':
         save_user_upload_method(user_id, "Telethon")
-        await event.edit("Upload method set to **SpyLib ⚡\n\nThanks for choosing this library as it will help me to analyze the error raise issues on github.** ✅")        
-        
+        await event.edit("Upload method set to **SpyLib ⚡\n\nThanks for choosing this library as it will help me to analyze the error raise issues on github.** ✅")
+    elif event.data == b'uploadmethod':
+        user_data = collection.find_one({'user_id': user_id})
+        current_method = user_data.get('upload_method', 'Pyrogram') if user_data else 'Pyrogram'
+        pyrogram_check = " ✅" if current_method == "Pyrogram" else ""
+        telethon_check = " ✅" if current_method == "Telethon" else ""
+        buttons = [
+            [Button.inline(f"Pyrogram v2{pyrogram_check}", b'pyrogram')],
+            [Button.inline(f"SpyLib v1 ⚡{telethon_check}", b'telethon')]
+        ]
+        await event.edit("Choose your preferred upload method:\n\n__**Note:** **SpyLib ⚡**, built on Telethon(base), by Team SPY still in beta.__", buttons=buttons)
     elif event.data == b'reset':
         try:
             user_id_str = str(user_id)
-            
             collection.update_one(
                 {"_id": user_id},
                 {"$unset": {
@@ -759,7 +637,6 @@ async def callback_query_handler(event):
                     "duration_limit": ""
                 }}
             )
-            
             collection.update_one(
                 {"user_id": user_id},
                 {"$unset": {
@@ -769,7 +646,7 @@ async def callback_query_handler(event):
                     "pdf_watermark_text": "",
                     "duration_limit": ""
                 }}
-            )            
+            )
             user_chat_ids.pop(user_id, None)
             user_rename_preferences.pop(user_id_str, None)
             user_caption_preferences.pop(user_id_str, None)
@@ -779,18 +656,15 @@ async def callback_query_handler(event):
             await event.respond("✅ Reset successfully, to logout click /logout")
         except Exception as e:
             await event.respond(f"Error clearing delete list: {e}")
-    
     elif event.data == b'remthumb':
         try:
             os.remove(f'{user_id}.jpg')
             await event.respond('Thumbnail removed successfully!')
         except FileNotFoundError:
             await event.respond("No thumbnail found to remove.")
-
 @gf.on(events.NewMessage(func=lambda e: e.sender_id in pending_photos))
 async def save_thumbnail(event):
     user_id = event.sender_id
-
     if event.photo:
         temp_path = await event.download_media()
         if os.path.exists(f'{user_id}.jpg'):
@@ -799,22 +673,18 @@ async def save_thumbnail(event):
         await event.respond('Thumbnail saved successfully!')
     else:
         await event.respond('Please send a photo... Retry')
-
     pending_photos.pop(user_id, None)
-
 def save_user_upload_method(user_id, method):
     collection.update_one(
         {'user_id': user_id},
         {'$set': {'upload_method': method}},
         upsert=True
     )
-
 @gf.on(events.NewMessage)
 async def handle_user_input(event):
     user_id = event.sender_id
     if user_id in sessions:
         session_type = sessions[user_id]
-
         if session_type == 'setchat':
             try:
                 chat_id = event.text
@@ -822,17 +692,14 @@ async def handle_user_input(event):
                 await event.respond("Chat ID set successfully!")
             except ValueError:
                 await event.respond("Invalid chat ID!")
-                
         elif session_type == 'setrename':
             custom_rename_tag = event.text
             await set_rename_command(user_id, custom_rename_tag)
             await event.respond(f"Custom rename tag set to: {custom_rename_tag}")
-        
         elif session_type == 'setcaption':
             custom_caption = event.text
             await set_caption_command(user_id, custom_caption)
             await event.respond(f"Custom caption set to: {custom_caption}")
-
         elif session_type == 'setreplacement':
             match = re.match(r"'(.+)' '(.+)'", event.text)
             if not match:
@@ -847,59 +714,47 @@ async def handle_user_input(event):
                     replacements[word] = replace_word
                     save_replacement_words(user_id, replacements)
                     await event.respond(f"Replacement saved: '{word}' will be replaced with '{replace_word}'")
-
         elif session_type == 'addsession':
             session_string = event.text
             await odb.set_session(user_id, session_string)
             await event.respond("✅ Session string added successfully!")
-                
         elif session_type == 'deleteword':
             words_to_delete = event.message.text.split()
             delete_words = load_delete_words(user_id)
             delete_words.update(words_to_delete)
             save_delete_words(user_id, delete_words)
             await event.respond(f"Words added to delete list: {', '.join(words_to_delete)}")
-                
         elif session_type == 'setwatermark':
             watermark_text = event.text
             save_watermark_text(user_id, watermark_text)
             await event.respond(f"Video watermark text set to: {watermark_text}")
-                
         elif session_type == 'setpdfwatermark':
             pdf_watermark_text = event.text
             save_pdf_watermark_text(user_id, pdf_watermark_text)
             await event.respond(f"PDF watermark text set to: {pdf_watermark_text}")
-
         del sessions[user_id]
-
 @gf.on(events.NewMessage(incoming=True, pattern='/lock'))
 async def lock_command_handler(event):
     if event.sender_id not in OWNER_ID:
         return await event.respond("You are not authorized to use this command.")
-    
     try:
         channel_id = int(event.text.split(' ')[1])
     except (ValueError, IndexError):
         return await event.respond("Invalid /lock command. Use /lock CHANNEL_ID.")
-    
     try:
         collection.insert_one({"channel_id": channel_id})
         await event.respond(f"Channel ID {channel_id} locked successfully.")
     except Exception as e:
         await event.respond(f"Error occurred while locking channel ID: {str(e)}")
-
 async def handle_large_file(file, sender, edit, caption):
     if pro is None:
         await edit.edit('**__ ❌ 4GB trigger not found__**')
         os.remove(file)
         gc.collect()
         return
-    
     dm = None
-    
     print("4GB connector found.")
     await edit.edit('**__ ✅ 4GB trigger connected...__**\n\n')
-    
     target_chat_id = user_chat_ids.get(sender, sender)
     file_extension = str(file).split('.')[-1].lower()
     metadata = video_metadata(file) if file_extension in VIDEO_EXTENSIONS else {'width': 0, 'height': 0, 'duration': 0}
@@ -910,17 +765,13 @@ async def handle_large_file(file, sender, edit, caption):
         thumb_path = await screenshot(file, duration, sender) if file_extension in VIDEO_EXTENSIONS else None
     except Exception:
         thumb_path = None
-
-    # Apply watermarks if applicable
     watermark_text = load_watermark_text(sender)
     pdf_watermark_text = load_pdf_watermark_text(sender)
     original_file = file
-
     if watermark_text and file_extension in VIDEO_EXTENSIONS:
         file = await apply_video_watermark(file, watermark_text, sender)
     if pdf_watermark_text and file_extension in PDF_EXTENSIONS:
         file = await apply_pdf_watermark(file, pdf_watermark_text, sender)
-
     try:
         if file_extension in VIDEO_EXTENSIONS:
             dm = await pro.send_video(
@@ -951,7 +802,6 @@ async def handle_large_file(file, sender, edit, caption):
                     time.time()
                 )
             )
-
         from_chat = dm.chat.id
         msg_id = dm.id
         freecheck = 0
@@ -974,10 +824,8 @@ async def handle_large_file(file, sender, edit, caption):
                 from_chat,
                 msg_id
             )
-            
     except Exception as e:
         print(f"Error while sending file: {e}")
-
     finally:
         await edit.delete()
         if file != original_file and os.path.exists(file):
@@ -986,17 +834,13 @@ async def handle_large_file(file, sender, edit, caption):
             os.remove(original_file)
         gc.collect()
         return
-
 async def rename_file(file, sender):
     delete_words = load_delete_words(sender)
     custom_rename_tag = get_user_rename_preference(sender)
     replacements = load_replacement_words(sender)
-    
     last_dot_index = str(file).rfind('.')
-    
     if last_dot_index != -1 and last_dot_index != 0:
         ggn_ext = str(file)[last_dot_index + 1:]
-        
         if ggn_ext.isalpha() and len(ggn_ext) <= 9:
             if ggn_ext.lower() in VIDEO_EXTENSIONS:
                 original_file_name = str(file)[:last_dot_index]
@@ -1010,21 +854,16 @@ async def rename_file(file, sender):
     else:
         original_file_name = str(file)
         file_extension = 'mp4'
-        
     for word in delete_words:
         original_file_name = original_file_name.replace(word, "")
-
     for word, replace_word in replacements.items():
         original_file_name = original_file_name.replace(word, replace_word)
-
     new_file_name = f"{original_file_name} {custom_rename_tag}.{file_extension}"
     await asyncio.to_thread(os.rename, file, new_file_name)
     return new_file_name
-
 async def sanitize(file_name: str) -> str:
     sanitized_name = re.sub(r'[\\/:"*?<>|]', '_', file_name)
     return sanitized_name.strip()
-
 async def is_file_size_exceeding(file_path, size_limit):
     try:
         return os.path.getsize(file_path) > size_limit
@@ -1034,16 +873,13 @@ async def is_file_size_exceeding(file_path, size_limit):
     except Exception as e:
         print(f"Error while checking file size: {e}")
         return False
-
 user_progress = {}
-
 def progress_callback(done, total, user_id):
     if user_id not in user_progress:
         user_progress[user_id] = {
             'previous_done': 0,
             'previous_time': time.time()
         }
-    
     user_data = user_progress[user_id]
     percent = (done / total) * 100
     completed_blocks = int(percent // 10)
@@ -1053,18 +889,15 @@ def progress_callback(done, total, user_id):
     total_mb = total / (1024 * 1024)
     speed = done - user_data['previous_done']
     elapsed_time = time.time() - user_data['previous_time']
-    
     if elapsed_time > 0:
         speed_bps = speed / elapsed_time
         speed_mbps = (speed_bps * 8) / (1024 * 1024)
     else:
         speed_mbps = 0
-    
     if speed_bps > 0:
         remaining_time = (total - done) / speed_bps
     else:
         remaining_time = 0
-    
     remaining_time_min = remaining_time / 60
     final = (
         f"╭──────────────────╮\n"
@@ -1078,18 +911,15 @@ def progress_callback(done, total, user_id):
         f"╰──────────────────╯\n\n"
         f"**__Powered by Team SPY__**"
     )
-    
     user_data['previous_done'] = done
     user_data['previous_time'] = time.time()
     return final
-
 def dl_progress_callback(done, total, user_id):
     if user_id not in user_progress:
         user_progress[user_id] = {
             'previous_done': 0,
             'previous_time': time.time()
         }
-    
     user_data = user_progress[user_id]
     percent = (done / total) * 100
     completed_blocks = int(percent // 10)
@@ -1099,18 +929,15 @@ def dl_progress_callback(done, total, user_id):
     total_mb = total / (1024 * 1024)
     speed = done - user_data['previous_done']
     elapsed_time = time.time() - user_data['previous_time']
-    
     if elapsed_time > 0:
         speed_bps = speed / elapsed_time
         speed_mbps = (speed_bps * 8) / (1024 * 1024)
     else:
         speed_mbps = 0
-    
     if speed_bps > 0:
         remaining_time = (total - done) / speed_bps
     else:
         remaining_time = 0
-    
     remaining_time_min = remaining_time / 60
     final = (
         f"╭──────────────────╮\n"
@@ -1124,43 +951,33 @@ def dl_progress_callback(done, total, user_id):
         f"╰──────────────────╯\n\n"
         f"**__Powered by Team SPY__**"
     )
-    
     user_data['previous_done'] = done
     user_data['previous_time'] = time.time()
     return final
-
 async def split_and_upload_file(app, sender, target_chat_id, file_path, caption, topic_id):
     if not os.path.exists(file_path):
         await app.send_message(sender, "❌ File not found!")
         return
-
     file_size = os.path.getsize(file_path)
     start = await app.send_message(sender, f"ℹ️ File size: {file_size / (1024 * 1024):.2f} MB")
     PART_SIZE = 1.9 * 1024 * 1024 * 1024
-
-    # Apply watermark if applicable
     watermark_text = load_watermark_text(sender) if file_path.split('.')[-1].lower() in VIDEO_EXTENSIONS else None
     pdf_watermark_text = load_pdf_watermark_text(sender) if file_path.split('.')[-1].lower() in PDF_EXTENSIONS else None
     original_file = file_path
-
     if watermark_text and file_path.split('.')[-1].lower() in VIDEO_EXTENSIONS:
         file_path = await apply_video_watermark(file_path, watermark_text, sender)
     if pdf_watermark_text and file_path.split('.')[-1].lower() in PDF_EXTENSIONS:
         file_path = await apply_pdf_watermark(file_path, pdf_watermark_text, sender)
-
     part_number = 0
     async with aiofiles.open(file_path, mode="rb") as f:
         while True:
             chunk = await f.read(PART_SIZE)
             if not chunk:
                 break
-
             base_name, file_ext = os.path.splitext(file_path)
             part_file = f"{base_name}.part{str(part_number).zfill(3)}{file_ext}"
-
             async with aiofiles.open(part_file, mode="wb") as part_f:
                 await part_f.write(chunk)
-
             edit = await app.send_message(target_chat_id, f"⬆️ Uploading part {part_number + 1}...")
             part_caption = f"{caption} \n\n**Part : {part_number + 1}**"
             await app.send_document(
@@ -1174,7 +991,6 @@ async def split_and_upload_file(app, sender, target_chat_id, file_path, caption,
             await edit.delete()
             os.remove(part_file)
             part_number += 1
-
     await start.delete()
     if file_path != original_file and os.path.exists(file_path):
         os.remove(file_path)
