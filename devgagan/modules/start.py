@@ -4,91 +4,72 @@ from config import OWNER_ID
 from devgagan.core.func import subscribe
 import asyncio
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.raw.functions.bots import SetBotInfo
-from pyrogram.raw.types import InputUserSelf
 from pyrogram.types import BotCommand
 
 @app.on_message(filters.command("set") & filters.user(OWNER_ID))
 async def set_commands(_, message):
     try:
         await app.set_bot_commands([
-            BotCommand("start", "🚀 Start the bot"),
-            BotCommand("batch", "🫠 Extract in bulk"),
-            BotCommand("login", "🔑 Get into the bot"),
-            BotCommand("logout", "🚪 Get out of the bot"),
-            BotCommand("token", "🎲 Get 3 hours free access"),
-            BotCommand("adl", "👻 Download audio from 30+ sites"),
-            BotCommand("dl", "💀 Download videos from 30+ sites"),
-            BotCommand("freez", "🧊 Remove all expired users"),
-            BotCommand("pay", "₹ Pay now to get subscription"),
-            BotCommand("status", "⟳ Refresh Payment status"),
-            BotCommand("transfer", "💘 Gift premium to others"),
-            BotCommand("myplan", "⌛ Get your plan details"),
-            BotCommand("add", "➕ Add user to premium"),
-            BotCommand("rem", "➖ Remove from premium"),
-            BotCommand("session", "🧵 Generate Pyrogramv2 session"),
-            BotCommand("settings", "⚙️ Personalize things"),
-            BotCommand("stats", "📊 Get stats of the bot"),
-            BotCommand("plan", "🗓️ Check our premium plans"),
-            BotCommand("terms", "🥺 Terms and conditions"),
-            BotCommand("speedtest", "🚅 Speed of server"),
-            BotCommand("lock", "🔒 Protect channel from extraction"),
-            BotCommand("gcast", "⚡ Broadcast message to bot users"),
-            BotCommand("help", "❓ If you're a noob, still!"),
-            BotCommand("cancel", "🚫 Cancel batch process")
+            BotCommand("start", "Initiate bot interaction"),
+            BotCommand("batch", "Extract posts in bulk"),
+            BotCommand("login", "Access private channels"),
+            BotCommand("logout", "End bot session"),
+            BotCommand("token", "Gain 3-hour free access"),
+            BotCommand("adl", "Download audio from sites"),
+            BotCommand("dl", "Download videos from sites"),
+            BotCommand("freez", "Clear expired users"),
+            BotCommand("pay", "Purchase subscription"),
+            BotCommand("status", "Check payment status"),
+            BotCommand("transfer", "Gift premium access"),
+            BotCommand("myplan", "View plan details"),
+            BotCommand("add", "Grant premium to user"),
+            BotCommand("rem", "Revoke premium from user"),
+            BotCommand("session", "Create Pyrogram V2 session"),
+            BotCommand("settings", "Customize bot options"),
+            BotCommand("stats", "Display bot statistics"),
+            BotCommand("plan", "Explore premium plans"),
+            BotCommand("terms", "Read terms and conditions"),
+            BotCommand("speedtest", "Test server speed"),
+            BotCommand("lock", "Secure channel extraction"),
+            BotCommand("gcast", "Broadcast to users"),
+            BotCommand("help", "Show command guide"),
+            BotCommand("cancel", "Stop batch process")
         ])
-        await message.reply("✅ Commands configured successfully!")
+        await message.reply("✅ Commands set successfully!")
     except Exception as e:
         await message.reply(f"❌ Error setting commands: {str(e)}")
 
 help_pages = [
     (
-        "📝 **Bot Commands Overview (1/2)**:\n\n"
-        "1. **/add userID**\n"
-        "> Add user to premium (Owner only)\n\n"
-        "2. **/rem userID**\n"
-        "> Remove user from premium (Owner only)\n\n"
-        "3. **/transfer userID**\n"
-        "> Transfer premium to another user (Premium members only)\n\n"
-        "4. **/get**\n"
-        "> Get all user IDs (Owner only)\n\n"
-        "5. **/lock**\n"
-        "> Lock channel from extraction (Owner only)\n\n"
-        "6. **/dl link**\n"
-        "> Download videos (Not available in v3)\n\n"
-        "7. **/adl link**\n"
-        "> Download audio (Not available in v3)\n\n"
-        "8. **/login**\n"
-        "> Log into the bot for private channel access\n\n"
-        "9. **/batch**\n"
-        "> Bulk extraction for posts (After login)\n\n"
+        "✨ **Command Guide (1/2)** ✨\n\n"
+        "🔹 **/start** - Initiate bot interaction\n"
+        "🔹 **/batch** - Extract posts in bulk\n"
+        "🔹 **/login** - Access private channels\n"
+        "🔹 **/logout** - End bot session\n"
+        "🔹 **/token** - Gain 3-hour free access\n"
+        "🔹 **/adl** - Download audio from sites (v3 unavailable)\n"
+        "🔹 **/dl** - Download videos from sites (v3 unavailable)\n"
+        "🔹 **/freez** - Clear expired users (Owner only)\n"
+        "🔹 **/pay** - Purchase subscription\n"
+        "🔹 **/status** - Check payment status\n"
+        "🔹 **/transfer** - Gift premium access (Premium only)\n"
+        "🔹 **/myplan** - View plan details\n"
     ),
     (
-        "📝 **Bot Commands Overview (2/2)**:\n\n"
-        "10. **/logout**\n"
-        "> Logout from the bot\n\n"
-        "11. **/stats**\n"
-        "> Get bot stats\n\n"
-        "12. **/plan**\n"
-        "> Check premium plans\n\n"
-        "13. **/speedtest**\n"
-        "> Test the server speed (Not available in v3)\n\n"
-        "14. **/terms**\n"
-        "> Terms and conditions\n\n"
-        "15. **/cancel**\n"
-        "> Cancel ongoing batch process\n\n"
-        "16. **/myplan**\n"
-        "> Get details about your plans\n\n"
-        "17. **/session**\n"
-        "> Generate Pyrogram V2 session\n\n"
-        "18. **/settings**\n"
-        "> 1. SETCHATID: Directly upload to a channel, group, or user's DM using -100[chatID]\n"
-        "> 2. SETRENAME: Add custom rename tag or username for your channels\n"
-        "> 3. CAPTION: Add custom caption\n"
-        "> 4. REPLACEWORDS: Replace specified words in content\n"
-        "> 5. RESET: Restore default settings\n\n"
-        "> Additional settings: Set CUSTOM THUMBNAIL, PDF WATERMARK, VIDEO WATERMARK, SESSION-based login, etc.\n\n"
-        "**Powered by Team SPY**"
+        "✨ **Command Guide (2/2)** ✨\n\n"
+        "🔹 **/add** - Grant premium to user (Owner only)\n"
+        "🔹 **/rem** - Revoke premium from user (Owner only)\n"
+        "🔹 **/session** - Create Pyrogram V2 session\n"
+        "🔹 **/settings** - Customize bot options\n"
+        "🔹 **/stats** - Display bot statistics\n"
+        "🔹 **/plan** - Explore premium plans\n"
+        "🔹 **/terms** - Read terms and conditions\n"
+        "🔹 **/speedtest** - Test server speed (v3 unavailable)\n"
+        "🔹 **/lock** - Secure channel extraction (Owner only)\n"
+        "🔹 **/gcast** - Broadcast to users (Owner only)\n"
+        "🔹 **/help** - Show command guide\n"
+        "🔹 **/cancel** - Stop batch process\n"
+        "\n**Powered by Team SPY**"
     )
 ]
 
@@ -97,8 +78,8 @@ async def send_or_edit_help_page(client, message, page_number):
         await message.reply("❌ Invalid page number.")
         return
 
-    prev_button = InlineKeyboardButton("◀️ Previous", callback_data=f"help_prev_{page_number}")
-    next_button = InlineKeyboardButton("Next ▶️", callback_data=f"help_next_{page_number}")
+    prev_button = InlineKeyboardButton("⬅️ Prev", callback_data=f"help_prev_{page_number}")
+    next_button = InlineKeyboardButton("Next ➡️", callback_data=f"help_next_{page_number}")
 
     buttons = []
     if page_number > 0:
@@ -144,13 +125,13 @@ async def terms_command(client, message):
     try:
         terms_text = (
             "📜 **Terms and Conditions** 📜\n\n"
-            "✨ We are not responsible for user actions and do not promote copyrighted content. Users are solely responsible for their activities.\n"
-            "✨ Purchasing a plan does not guarantee uptime, downtime, or plan validity. Authorization and banning of users are at our discretion.\n"
-            "✨ Payment does not guarantee authorization for the /batch command. All authorization decisions are made at our discretion.\n"
+            "🔸 Users are solely responsible for their actions; we do not endorse copyrighted content.\n"
+            "🔸 Plan purchase does not guarantee uptime or validity; user authorization is at our discretion.\n"
+            "🔸 Payment does not ensure /batch command access; authorization decisions are final.\n"
         )
         buttons = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📋 See Plans", callback_data="see_plan")],
-            [InlineKeyboardButton("💬 Contact Now", url="https://t.me/kingofpatal")]
+            [InlineKeyboardButton("📋 Plans", callback_data="see_plan")],
+            [InlineKeyboardButton("💬 Contact", url="https://t.me/kingofpatal")]
         ])
         await message.reply_text(terms_text, reply_markup=buttons)
     except Exception as e:
@@ -160,33 +141,33 @@ async def terms_command(client, message):
 async def plan_command(client, message):
     try:
         plan_text = (
-            "💰 **Premium Price**:\n\n Starting from $2 or 200 INR via **Amazon Gift Card** (terms and conditions apply).\n"
-            "📥 **Download Limit**: Up to 100,000 files in a single batch command.\n"
-            "🛑 **Batch**: Includes /bulk and /batch modes.\n"
-            "   - Wait for the process to cancel automatically before proceeding with downloads or uploads.\n\n"
-            "📜 **Terms and Conditions**: Send /terms for details.\n"
+            "💰 **Premium Plans** 💰\n\n"
+            "🔸 **Price**: From $2 or 200 INR via Amazon Gift Card (terms apply).\n"
+            "🔸 **Download Limit**: Up to 100,000 files per batch command.\n"
+            "🔸 **Batch Modes**: Access /bulk and /batch; wait for process completion before new actions.\n"
+            "🔸 **Details**: Use /terms for full terms and conditions.\n"
         )
         buttons = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📜 See Terms", callback_data="see_terms")],
-            [InlineKeyboardButton("💬 Contact Now", url="https://t.me/kingofpatal")]
+            [InlineKeyboardButton("📜 Terms", callback_data="see_terms")],
+            [InlineKeyboardButton("💬 Contact", url="https://t.me/kingofpatal")]
         ])
         await message.reply_text(plan_text, reply_markup=buttons)
     except Exception as e:
-        await message.reply(f"❌ The error is: {str(e)}")
+        await message.reply(f"❌ Error displaying plan: {str(e)}")
 
 @app.on_callback_query(filters.regex("see_plan"))
 async def see_plan_callback(client, callback_query):
     try:
         plan_text = (
-            "💰 **Premium Price**:\n\n Starting from $2 or 200 INR via **Amazon Gift Card** (terms and conditions apply).\n"
-            "📥 **Download Limit**: Up to 100,000 files in a single batch command.\n"
-            "🛑 **Batch**: Includes /bulk and /batch modes.\n"
-            "   - Wait for the process to cancel automatically before proceeding with downloads or uploads.\n\n"
-            "📜 **Terms and Conditions**: Send /terms or click 'See Terms' below for details.\n"
+            "💰 **Premium Plans** 💰\n\n"
+            "🔸 **Price**: From $2 or 200 INR via Amazon Gift Card (terms apply).\n"
+            "🔸 **Download Limit**: Up to 100,000 files per batch command.\n"
+            "🔸 **Batch Modes**: Access /bulk and /batch; wait for process completion before new actions.\n"
+            "🔸 **Details**: Use /terms or click 'Terms' below for full conditions.\n"
         )
         buttons = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📜 See Terms", callback_data="see_terms")],
-            [InlineKeyboardButton("💬 Contact Now", url="https://t.me/kingofpatal")]
+            [InlineKeyboardButton("📜 Terms", callback_data="see_terms")],
+            [InlineKeyboardButton("💬 Contact", url="https://t.me/kingofpatal")]
         ])
         await callback_query.message.edit_text(plan_text, reply_markup=buttons)
         await callback_query.answer()
@@ -199,13 +180,13 @@ async def see_terms_callback(client, callback_query):
     try:
         terms_text = (
             "📜 **Terms and Conditions** 📜\n\n"
-            "✨ We are not responsible for user actions and do not promote copyrighted content. Users are solely responsible for their activities.\n"
-            "✨ Purchasing a plan does not guarantee uptime, downtime, or plan validity. Authorization and banning of users are at our discretion.\n"
-            "✨ Payment does not guarantee authorization for the /batch command. All authorization decisions are made at our discretion.\n"
+            "🔸 Users are solely responsible for their actions; we do not endorse copyrighted content.\n"
+            "🔸 Plan purchase does not guarantee uptime or validity; user authorization is at our discretion.\n"
+            "🔸 Payment does not ensure /batch command access; authorization decisions are final.\n"
         )
         buttons = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📋 See Plans", callback_data="see_plan")],
-            [InlineKeyboardButton("💬 Contact Now", url="https://t.me/kingofpatal")]
+            [InlineKeyboardButton("📋 Plans", callback_data="see_plan")],
+            [InlineKeyboardButton("💬 Contact", url="https://t.me/kingofpatal")]
         ])
         await callback_query.message.edit_text(terms_text, reply_markup=buttons)
         await callback_query.answer()
