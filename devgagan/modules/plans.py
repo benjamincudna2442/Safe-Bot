@@ -194,7 +194,7 @@ async def give_premium(client, message):
                     f"⏰ **Premium Duration**: <code>{time_input}</code>\n"
                     f"⏳ **Joining Date**: {current_time}\n"
                     f"⌛ **Expiry Date**: {expiry_str}\n\n"
-                    f"**Powered by Team SPY** 🚀",
+                    f"**Powered by SmartDev** 🚀",
                     disable_web_page_preview=True
                 )
                 await client.send_message(
@@ -243,7 +243,7 @@ async def transfer_premium(client, message):
                     f"👤 **From**: {sender_user.mention}\n"
                     f"👤 **To**: {new_user.mention}\n"
                     f"⏳ **Expiry Date**: {expiry_str}\n\n"
-                    f"**Powered by Team SPY** 🚀"
+                    f"**Powered by SmartDev** 🚀"
                 )
                 await client.send_message(
                     chat_id=new_user_id,
@@ -335,7 +335,7 @@ async def plan_command(client, message):
             [InlineKeyboardButton("Plan 1 (5 Stars)", callback_data="plan_1"),
              InlineKeyboardButton("Plan 2 (150 Stars)", callback_data="plan_2")],
             [InlineKeyboardButton("Plan 3 (250 Stars)", callback_data="plan_3")],
-            [InlineKeyboardButton("💬 Contact Owner", url="https://t.me/kingofpatal")]
+            [InlineKeyboardButton("💬 Contact Owner", url="https://t.me/ISmartCoder")]
         ])
         await client.send_message(
             chat_id=message.chat.id,
@@ -453,7 +453,7 @@ async def handle_plan_callback(client, callback_query):
                 [InlineKeyboardButton("Plan 1 (5 Stars)", callback_data="plan_1"),
                  InlineKeyboardButton("Plan 2 (150 Stars)", callback_data="plan_2")],
                 [InlineKeyboardButton("Plan 3 (250 Stars)", callback_data="plan_3")],
-                [InlineKeyboardButton("💬 Contact Owner", url="https://t.me/kingofpatal")]
+                [InlineKeyboardButton("💬 Contact Owner", url="https://t.me/ISmartCoder")]
             ])
             await client.edit_message_text(
                 chat_id,
@@ -578,5 +578,5 @@ async def raw_update_handler(client, update, users, chats):
             await client.send_message(
                 chat_id=chat_id,
                 text=PAYMENT_FAILED_TEXT,
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📞 Support", url=f"tg://user?id={OWNER_ID[0]}")]])
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📞 Support", url=f"https://t.me/ISmartCoder")]])
             )
