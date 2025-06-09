@@ -4,40 +4,6 @@ from config import OWNER_ID
 from devgagan.core.func import subscribe
 import asyncio
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.types import BotCommand
-
-@app.on_message(filters.command("set") & filters.user(OWNER_ID))
-async def set_commands(_, message):
-    try:
-        await app.set_bot_commands([
-            BotCommand("start", "Initiate bot interaction"),
-            BotCommand("batch", "Extract posts in bulk"),
-            BotCommand("login", "Access private channels"),
-            BotCommand("logout", "End bot session"),
-            BotCommand("token", "Gain 3-hour free access"),
-            BotCommand("adl", "Download audio from sites"),
-            BotCommand("dl", "Download videos from sites"),
-            BotCommand("freez", "Clear expired users"),
-            BotCommand("pay", "Purchase subscription"),
-            BotCommand("status", "Check payment status"),
-            BotCommand("transfer", "Gift premium access"),
-            BotCommand("myplan", "View plan details"),
-            BotCommand("add", "Grant premium to user"),
-            BotCommand("rem", "Revoke premium from user"),
-            BotCommand("session", "Create Pyrogram V2 session"),
-            BotCommand("settings", "Customize bot options"),
-            BotCommand("stats", "Display bot statistics"),
-            BotCommand("plan", "Explore premium plans"),
-            BotCommand("terms", "Read terms and conditions"),
-            BotCommand("speedtest", "Test server speed"),
-            BotCommand("lock", "Secure channel extraction"),
-            BotCommand("gcast", "Broadcast to users"),
-            BotCommand("help", "Show command guide"),
-            BotCommand("cancel", "Stop batch process")
-        ])
-        await message.reply("✅ Commands set successfully!")
-    except Exception as e:
-        await message.reply(f"❌ Error setting commands: {str(e)}")
 
 help_pages = [
     (
@@ -93,12 +59,14 @@ async def send_or_edit_help_page(client, message, page_number):
         if isinstance(message, CallbackQuery):
             await message.message.edit_text(
                 help_pages[page_number],
-                reply_markup=keyboard
+                reply_markup=keyboard,
+                disable_web_page_preview=True
             )
         else:
             await message.reply(
                 help_pages[page_number],
-                reply_markup=keyboard
+                reply_markup=keyboard,
+                disable_web_page_preview=True
             )
     except Exception as e:
         await message.reply(f"❌ Error displaying help page: {str(e)}")
@@ -123,6 +91,8 @@ async def on_help_navigation(client, callback_query):
 @app.on_message(filters.command("terms") & filters.private)
 async def terms_command(client, message):
     try:
+        if await subscribe(client, message) == 1:
+            return
         terms_text = (
             "📜 **Terms and Conditions** 📜\n\n"
             "🔸 Users are solely responsible for their actions; we do not endorse copyrighted content.\n"
@@ -133,13 +103,15 @@ async def terms_command(client, message):
             [InlineKeyboardButton("📋 Plans", callback_data="see_plan")],
             [InlineKeyboardButton("💬 Contact", url="https://t.me/kingofpatal")]
         ])
-        await message.reply_text(terms_text, reply_markup=buttons)
+        await message.reply_text(terms_text, reply_markup=buttons, disable_web_page_preview=True)
     except Exception as e:
         await message.reply(f"❌ Error displaying terms: {str(e)}")
 
 @app.on_message(filters.command("plan") & filters.private)
 async def plan_command(client, message):
     try:
+        if await subscribe(client, message) == 1:
+            return
         plan_text = (
             "💰 **Premium Plans** 💰\n\n"
             "🔸 **Price**: From $2 or 200 INR via Amazon Gift Card (terms apply).\n"
@@ -151,7 +123,7 @@ async def plan_command(client, message):
             [InlineKeyboardButton("📜 Terms", callback_data="see_terms")],
             [InlineKeyboardButton("💬 Contact", url="https://t.me/kingofpatal")]
         ])
-        await message.reply_text(plan_text, reply_markup=buttons)
+        await message.reply_text(plan_text, reply_markup=buttons, disable_web_page_preview=True)
     except Exception as e:
         await message.reply(f"❌ Error displaying plan: {str(e)}")
 
@@ -169,7 +141,7 @@ async def see_plan_callback(client, callback_query):
             [InlineKeyboardButton("📜 Terms", callback_data="see_terms")],
             [InlineKeyboardButton("💬 Contact", url="https://t.me/kingofpatal")]
         ])
-        await callback_query.message.edit_text(plan_text, reply_markup=buttons)
+        await callback_query.message.edit_text(plan_text, reply_markup=buttons, disable_web_page_preview=True)
         await callback_query.answer()
     except Exception as e:
         await callback_query.message.reply(f"❌ Error displaying plan: {str(e)}")
@@ -188,7 +160,7 @@ async def see_terms_callback(client, callback_query):
             [InlineKeyboardButton("📋 Plans", callback_data="see_plan")],
             [InlineKeyboardButton("💬 Contact", url="https://t.me/kingofpatal")]
         ])
-        await callback_query.message.edit_text(terms_text, reply_markup=buttons)
+        await callback_query.message.edit_text(terms_text, reply_markup=buttons, disable_web_page_preview=True)
         await callback_query.answer()
     except Exception as e:
         await callback_query.message.reply(f"❌ Error displaying terms: {str(e)}")
