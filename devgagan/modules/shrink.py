@@ -55,14 +55,18 @@ async def token_handler(client, message):
             "**━━━━━━━━━━━━━━━━━━━━━━**\n"
             "**Don't Forget To [Join Here](https://t.me/TheSmartDev) For Updates!**",
             reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN
+            parse_mode=ParseMode.MARKDOWN,
+            disable_web_page_preview=True
         )
         return
 
     param = message.command[1] if len(message.command) > 1 else None
     freecheck = await chk_user(message, user_id)
     if freecheck != 1:
-        await message.reply("You are a premium user no need of token 😉")
+        await message.reply(
+            "You are a premium user no need of token 😉",
+            disable_web_page_preview=True
+        )
         return
 
     if param:
@@ -74,10 +78,16 @@ async def token_handler(client, message):
                 "expires_at": datetime.utcnow() + timedelta(hours=3),
             })
             del Param[user_id]
-            await message.reply("✅ You have been verified successfully! Enjoy your session for next 3 hours.")
+            await message.reply(
+                "✅ You have been verified successfully! Enjoy your session for next 3 hours.",
+                disable_web_page_preview=True
+            )
             return
         else:
-            await message.reply("❌ Invalid or expired verification link. Please generate a new token.")
+            await message.reply(
+                "❌ Invalid or expired verification link. Please generate a new token.",
+                disable_web_page_preview=True
+            )
             return
 
 @app.on_message(filters.command("token"))
@@ -85,22 +95,35 @@ async def smart_handler(client, message):
     user_id = message.chat.id
     freecheck = await chk_user(message, user_id)
     if freecheck != 1:
-        await message.reply("You are a premium user no need of token 😉")
+        await message.reply(
+            "You are a premium user no need of token 😉",
+            disable_web_page_preview=True
+        )
         return
     if await is_user_verified(user_id):
-        await message.reply("✅ Your free session is already active enjoy!")
+        await message.reply(
+            "✅ Your free session is already active enjoy!",
+            disable_web_page_preview=True
+        )
     else:
         param = await generate_random_param()
         Param[user_id] = param
         deep_link = f"https://t.me/{client.me.username}?start={param}"
         shortened_url = await get_shortened_url(deep_link)
         if not shortened_url:
-            await message.reply("❌ Failed to generate the token link. Please try again.")
+            await message.reply(
+                "❌ Failed to generate the token link. Please try again.",
+                disable_web_page_preview=True
+            )
             return
         button = InlineKeyboardMarkup(
             [[InlineKeyboardButton("Verify the token now...", url=shortened_url)]]
         )
-        await message.reply("Click the button below to verify your free access token: \n\n> What will you get ? \n1. No time bound upto 3 hours \n2. Batch command limit will be FreeLimit + 20 \n3. All functions unlocked", reply_markup=button)
+        await message.reply(
+            "Click the button below to verify your free access token: \n\n> What will you get ? \n1. No time bound upto 3 hours \n2. Batch command limit will be FreeLimit + 20 \n3. All functions unlocked",
+            reply_markup=button,
+            disable_web_page_preview=True
+        )
 
 @app.on_callback_query(filters.regex(r"^\$starthelpmsg$"))
 async def help_callback(client, callback_query):
@@ -133,7 +156,8 @@ async def help_callback(client, callback_query):
     await callback_query.message.edit_text(
         help_text,
         reply_markup=keyboard,
-        parse_mode=ParseMode.MARKDOWN
+        parse_mode=ParseMode.MARKDOWN,
+        disable_web_page_preview=True
     )
 
 @app.on_callback_query(filters.regex(r"^\$backStartmsg$"))
@@ -154,12 +178,13 @@ async def back_callback(client, callback_query):
     keyboard = InlineKeyboardMarkup(buttons)
     await callback_query.message.edit_text(
         f"**Hi {fullname}! Welcome To This Bot**\n"
-        "**━━━━━━━━━━━━━━━━━━━━━━━━━━━━**\n"
+        "**━━━━━━━━━━━━━━━━━━━━━━**\n"
         "**RestrictedDL ⚙️:** The ultimate toolkit on Telegram, offering Downloading Any Type Of Resticted Content From Both Public & Private Source!\n"
         "**━━━━━━━━━━━━━━━━━━━━━━**\n"
-        "**Don't forget To [Join Here](https://t.me/TheSmartDev) For Updates!**",
+        "**Don't Forget To [Join Here](https://t.me/TheSmartDev) For Updates!**",
         reply_markup=keyboard,
-        parse_mode=ParseMode.MARKDOWN
+        parse_mode=ParseMode.MARKDOWN,
+        disable_web_page_preview=True
     )
 
 @app.on_callback_query(filters.regex(r"^\$closeStartmsg$"))
