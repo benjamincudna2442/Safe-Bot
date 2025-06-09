@@ -183,7 +183,7 @@ async def upload_media(sender, target_chat_id, file, caption, edit, topic_id):
         elif upload_method == "Telethon":
             await edit.delete()
             progress_message = await gf.send_message(sender, "**__Uploading...__**")
-            caption = await format_caption_to_html(caption)
+            caption = await format_camera_to_html(caption)
             uploaded = await fast_upload(
                 gf, file,
                 reply=progress_message,
@@ -239,13 +239,13 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
         saved_channel_ids = load_saved_channel_ids()
         size_limit = 2 * 1024 * 1024 * 1024  # 1.99 GB size limit
         file = ''
-        edit =Nazmul Hossain
+        edit = await app.edit_message_text(sender, edit_id, "**Processing...**")  # Fixed line
         # Extract chat and message ID for valid Telegram links
         if 't.me/c/' in msg_link or 't.me/b/' in msg_link:
             parts = msg_link.split("/")
             if 't.me/b/' in msg_link:
                 chat = parts[-2]
-                msg_id = int(parts[-1]) + i # fixed bot problem 
+                msg_id = int(parts[-1]) + i  # fixed bot problem 
             else:
                 chat = int('-100' + parts[parts.index('c') + 1])
                 msg_id = int(parts[-1]) + i
@@ -257,7 +257,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                 )
                 return
             
-        elif '/s/' in msg_link: # fixed story typo
+        elif '/s/' in msg_link:  # fixed story typo
             edit = await app.edit_message_text(sender, edit_id, "Story Link Detected...")
             if userbot is None:
                 await edit.edit("Login in bot save stories...")     
@@ -712,7 +712,7 @@ async def callback_query_handler(event):
 
     elif event.data == b'telethon':
         save_user_upload_method(user_id, "Telethon")
-        await event.edit("Upload method set to **SpyLib ⚡\n\nThanks for choosing this library as it will help me to analyze the error raise issues on github.** ✅")        
+        await event.edit("Upload method set to **SpyLib ⚡\n\nThanks for choosing this library as it will help me to analyze the error raise issues on github.**: ✅")        
         
     elif event.data == b'reset':
         try:
@@ -901,7 +901,7 @@ async def handle_large_file(file, sender, edit, caption):
                 thumb=thumb_path,
                 progress=progress_bar,
                 progress_args=(
-                    "╭─────────────────────╮\n│      **__4GB Uploader ⚡__**\n├─────────────────────",
+                    "╭─────────────────────╮\n│      **__4GB Uploader__ ⚡**\n├─────────────────────",
                     edit,
                     time.time()
                 )
