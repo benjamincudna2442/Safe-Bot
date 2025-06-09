@@ -10,7 +10,7 @@ from pyrogram import filters
 from pyrogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.raw.functions.messages import SendMedia, SetBotPrecheckoutResults, SetBotShippingResults
 from pyrogram.raw.types import InputMediaInvoice, Invoice, DataJSON, LabeledPrice, UpdateBotPrecheckoutQuery, UpdateBotShippingQuery, UpdateNewMessage, MessageService, MessageActionPaymentSentMe, PeerUser, PeerChat, PeerChannel, ReplyInlineMarkup, KeyboardButtonRow, KeyboardButtonBuy
-from config import OWNER_ID, DEVELOPER_USER_ID
+from config import OWNER_ID
 import uuid
 import hashlib
 
@@ -602,5 +602,5 @@ async def handle_payment(client, update, users, chats):
             await client.send_message(
                 chat_id=chat_id,
                 text=PAYMENT_FAILED_TEXT,
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📞 Support", url=f"tg://user?id={DEVELOPER_USER_ID}")]])
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📞 Support", url=f"tg://user?id={OWNER_ID}")]])
             )
