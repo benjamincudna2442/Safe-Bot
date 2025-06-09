@@ -101,7 +101,7 @@ async def terms_command(client, message):
         )
         buttons = InlineKeyboardMarkup([
             [InlineKeyboardButton("📋 Plans", callback_data="see_plan")],
-            [InlineKeyboardButton("💬 Contact", url="https://t.me/kingofpatal")]
+            [InlineKeyboardButton("💬 Contact", url="https://t.me/ISmartCoder")]
         ])
         await message.reply_text(terms_text, reply_markup=buttons, disable_web_page_preview=True)
     except Exception as e:
@@ -121,7 +121,7 @@ async def plan_command(client, message):
         )
         buttons = InlineKeyboardMarkup([
             [InlineKeyboardButton("📜 Terms", callback_data="see_terms")],
-            [InlineKeyboardButton("💬 Contact", url="https://t.me/kingofpatal")]
+            [InlineKeyboardButton("💬 Contact", url="https://t.me/ISmartCoder")]
         ])
         await message.reply_text(plan_text, reply_markup=buttons, disable_web_page_preview=True)
     except Exception as e:
@@ -139,7 +139,7 @@ async def see_plan_callback(client, callback_query):
         )
         buttons = InlineKeyboardMarkup([
             [InlineKeyboardButton("📜 Terms", callback_data="see_terms")],
-            [InlineKeyboardButton("💬 Contact", url="https://t.me/kingofpatal")]
+            [InlineKeyboardButton("💬 Contact", url="https://t.me/ISmartCoder")]
         ])
         await callback_query.message.edit_text(plan_text, reply_markup=buttons, disable_web_page_preview=True)
         await callback_query.answer()
@@ -158,7 +158,7 @@ async def see_terms_callback(client, callback_query):
         )
         buttons = InlineKeyboardMarkup([
             [InlineKeyboardButton("📋 Plans", callback_data="see_plan")],
-            [InlineKeyboardButton("💬 Contact", url="https://t.me/kingofpatal")]
+            [InlineKeyboardButton("💬 Contact", url="https://t.me/ISmartCoder")]
         ])
         await callback_query.message.edit_text(terms_text, reply_markup=buttons, disable_web_page_preview=True)
         await callback_query.answer()
