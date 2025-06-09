@@ -186,7 +186,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             if chat in saved_channel_ids:
                 await app.edit_message_text(
                     message.chat.id, edit_id,
-                    "Sorry! This channel is protected by **__Team SPY__**."
+                    "Sorry! This channel is protected by **__SmartDev__**."
                 )
                 return
             
@@ -523,7 +523,7 @@ user_caption_preferences = {}
 async def set_rename_command(user_id, custom_rename_tag):
     user_rename_preferences[str(user_id)] = custom_rename_tag
 
-get_user_rename_preference = lambda user_id: user_rename_preferences.get(str(user_id), 'Team SPY')
+get_user_rename_preference = lambda user_id: user_rename_preferences.get(str(user_id), 'SmartDev')
 
 async def set_caption_command(user_id, custom_caption):
     user_caption_preferences[str(user_id)] = custom_caption
@@ -548,7 +548,7 @@ async def send_settings_message(chat_id, user_id):
         [Button.inline("🔑 Session Login", b'addsession'), Button.inline("🚪 Logout", b'logout')],
         [Button.inline("🖼️ Set Thumbnail", b'setthumb'), Button.inline("🗑️ Remove Thumbnail", b'remthumb')],
         [Button.inline("📤 Upload Method", b'uploadmethod')],
-        [Button.url("🚨 Report Errors", "https://t.me/team_spy_pro")]
+        [Button.url("🚨 Report Errors", "https://t.me/TheSmartDev")]
     ]
 
     await gf.send_file(
@@ -617,7 +617,7 @@ async def callback_query_handler(event):
                 [Button.inline(f"Pyrogram v2{pyrogram_check}", b'pyrogram')],
                 [Button.inline(f"SpyLib v1 ⚡{telethon_check}", b'telethon')]
             ]
-            await event.edit("📤 Choose your preferred upload method:\n\n__**Note:** SpyLib ⚡, built on Telethon(base), by Team SPY still in beta.__", buttons=buttons)
+            await event.edit("📤 Choose your preferred upload method:\n\n__**Note:** SpyLib ⚡, built on Telethon(base), by SmartDev still in beta.__", buttons=buttons)
         except Exception as e:
             await event.respond(f"Error retrieving upload method: {e}")
 
@@ -727,7 +727,7 @@ async def handle_large_file(file, sender, edit, caption):
         if freecheck == 1:
             reply_markup = InlineKeyboardMarkup(
                 [
-                    [InlineKeyboardButton("💎 Get Premium to Forward", url="https://t.me/kingofpatal")]
+                    [InlineKeyboardButton("💎 Get Premium to Forward", url="https://t.me/ISmartCoder")]
                 ]
             )
             await app.copy_message(
@@ -843,7 +843,7 @@ def progress_callback(done, total, user_id):
         f"│ **__Speed:__** {speed_mbps:.2f} Mbps\n"
         f"│ **__ETA:__** {remaining_time_min:.2f} min\n"
         f"╰──────────────────╯\n\n"
-        f"**__Powered by Team SPY__**"
+        f"**__Powered by SmartDev__**"
     )
     
     user_data['previous_done'] = done
@@ -889,7 +889,7 @@ def dl_progress_callback(done, total, user_id):
         f"│ **__Speed:__** {speed_mbps:.2f} Mbps\n"
         f"│ **__ETA:__** {remaining_time_min:.2f} min\n"
         f"╰──────────────────╯\n\n"
-        f"**__Powered by Team SPY__**"
+        f"**__Powered by SmartDev__**"
     )
     
     user_data['previous_done'] = done
